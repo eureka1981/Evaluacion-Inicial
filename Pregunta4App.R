@@ -44,9 +44,9 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   
-  reactive({req(input$code)})
+ 
   
-  selected <- reactive(injuries %>% filter(prod_code == input$code))
+  selected <- reactive({injuries %>% filter(prod_code == input$code)})
   
   
   
