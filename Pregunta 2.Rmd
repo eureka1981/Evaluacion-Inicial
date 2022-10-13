@@ -1,0 +1,57 @@
+---
+title: "Pregunta 2"
+author: "Eunice Sánchez"
+date: "10/13/2022"
+output: html_document
+---
+
+Se carga el archivo y la librería y se genera una variable auxiliar
+```{r}
+library(survey)
+encuesta<-readRDS ("~/Prueba/encuesta_f.rda")
+encuesta$total=1
+
+```
+
+Se determina el diseño muestral, se asume que el diseño poliétapico ya está incluído en el cálculo de los ponderadores
+
+```{r}
+encuesta_s=svydesign(id=~1,data=encuesta,weight=~peso)
+
+```
+
+Para determinar las proporciones de votantes por partido político, la variable "preferencia" se transforma a factor
+
+```{r}
+niv=c(1,2,3,4)
+preferencia=c("ns/nc","Partido 1","Partido 2","Partido 3")
+preferencia_fac.=factor(encuesta$preferencia,levels=niv,labels=preferencia)
+svymean( ~preferencia,encuesta_s)
+```
+
+
+Se calcula el tamaño de la población que se está analizando
+
+
+```{r}
+svytotal(~preferencia,encuesta_s)
+svytotal(~total,encuesta_s)
+```
+
+
+Se define un nuevo diseño muestral, para indicar que es simple, se señala que los estratos están contenidos en la variable auxiliar "total", y por lo tanto, es un solo estrato
+
+```{r}
+encuesta_s2 = svydesign(id=~1, data=encuesta, weight=~peso, strata = ~total)
+```
+
+Se calculan los intervalos de confianza de las preferencias electorales
+
+```{r}
+
+svymean( ~preferencia,encuesta_s2)-> zz
+confint(zz)
+
+```
+
+

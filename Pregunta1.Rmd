@@ -1,0 +1,252 @@
+---
+title: "Pregunta 1"
+author: "Eunice Sánchez"
+date: "10/13/2022"
+output:
+  html_document: default
+  pdf_document: default
+  word_document: default
+---
+
+Se fijó el directorio de trabajo y se cargaron las bases de datos a utilizar
+
+```{r}
+setwd("~/Prueba")
+base_electoral<-readRDS ("~/Prueba/electoral.rda")
+mapa<-readRDS ("~/Prueba/mapa.rda")
+```
+
+Con la exploración de datos se detectó que la suma de los votos de los tres partidos políticos no era igual al total de sufragios, por lo que se asumió que la diferencia entre el total de votos  menos la suma de votos de los tres partidos, era equivalente a los votos nulos
+
+```{r}
+base_electoral$nulos<-base_electoral$votos_total-(base_electoral$partido_a + base_electoral$partido_b + base_electoral$partido_c)
+```
+
+
+Se agregó a la base de datos, la variale ganador, para indicar qué partido había triunfado en cada una de las casillas
+
+```{r}
+gana_a<-subset(base_electoral, (base_electoral$partido_a > base_electoral$partido_b &  base_electoral$partido_a > base_electoral$partido_c))
+gana_b<-subset(base_electoral, (base_electoral$partido_b > base_electoral$partido_a &  base_electoral$partido_b > base_electoral$partido_c))
+gana_c<-subset(base_electoral, (base_electoral$partido_c > base_electoral$partido_a &  base_electoral$partido_c > base_electoral$partido_b))
+empate_b_c<-subset(base_electoral, ((base_electoral$partido_b == base_electoral$partido_c) &  base_electoral$partido_b > base_electoral$partido_a))
+
+
+gana_a$ganador="Partido A"
+gana_b$ganador="Partido B"
+gana_c$ganador="Partido C"
+empate_b_c$ganador="Empate Partido B y Partido C"
+
+
+base_electoral<-rbind(gana_a,gana_b,gana_c, empate_b_c) 
+
+```
+
+
+Se calculó el porcentaje de votos por cada partido político
+
+```{r}
+P= colSums (base_electoral[ , 2:7])
+P
+
+a1=13499
+b1=16828
+c1=16476
+nulos1=11360
+
+a=(13499/ 58163)*100
+a=round(a,2)
+
+b=(16828/ 58163)*100
+b=round(b,2)
+
+c=(16476/ 58163)*100
+c=round(c,2)
+
+nulos=(11360/ 58163)*100
+nulos=round(nulos,2)
+
+
+        
+titulos<-c("partido_a", "partido_b", "partido_c", "nulos")
+votos<-c(a1,b1,c1,nulos1)
+porcentaje<-c(a,b,c,nulos)
+
+
+
+Resultados <- data.frame(
+  titulos,
+  votos,
+  porcentaje
+)
+
+```
+
+Se graficaron los resultados
+
+```{r}
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(RColorBrewer)
+
+color <- brewer.pal(4, "Set2") 
+     e_theme <- theme(
+       plot.title = element_text(family = "Helvetica", face = "bold", size = (15)),
+     )
+     
+       
+     
+  ggplot(data=Resultados, aes(x=titulos, y=votos)) + 
+  geom_bar(stat="identity", position="stack", fill=color)+    
+  
+  
+  geom_text(aes(label=votos), vjust=8, color="black",   
+            position = position_dodge(0.9),  size=4.0
+  )       +
+  
+  
+  geom_text(aes(label=paste("(",porcentaje,"%)")), vjust=13, color="black",   
+            position = position_dodge(0.9),  size=3.0
+  )       +
+    
+    e_theme +
+  
+  labs(title = "Votos Obtenidos",
+       y = "",
+       x = "")
+```
+
+Ganó el partido B, aunque la diferencia con el partido C fue menor a un punto porcentual
+```{r}
+
+```
+
+
+Para analizar la geografía electoral, se unió la base electoral con el archivo geográfico y se encontró que los resultados correspondían a 50 casillas en los municipios de Acambay y Acolman en el estado de México
+
+```{r}
+
+  mapa= merge(x=mapa,y=base_electoral, by=  c("casilla"), all.x=FALSE)
+
+```
+
+
+Se estudió primero el municipio de Acambay y se observó que en ese municipio el partido B ganó en 22 Casillas, el partido C, en 8 y el partido A, en 2
+
+```{r}
+mapa_acambay<-subset(mapa, (mapa$municipio==1))
+table(mapa_acambay$ganador)
+```
+
+A continuación se elaboró el mapa y se exportó a PNG debido a que a pesar de que la imagen se imprimía en el script, en el archivo markdown señalaba error
+
+
+```{r}
+#library(ggplot2)
+#library(tibble)
+#library(sf)
+
+#png("acambay.png")
+
+#ggplot(data = mapa_acambay) +
+#  aes(geometry = geometry)+
+#  geom_sf(aes(fill=ganador)) +
+#  ggtitle("Municipio de Acambay")+
+#  theme(
+#    axis.title = element_blank(), 
+#    axis.text = element_blank(),
+ #   axis.ticks = element_blank(),
+#    complete = TRUE
+#  )
+
+#dev.off() 
+
+
+
+```
+
+```{r}
+library(magick)
+
+acambay <- image_read("~/Prueba/acambay.png")
+acambay
+
+```
+
+
+
+Como siguiente paso, se analizó el municipio de Acolman, donde la tendencia fue diferente a Acambay, puesto que el parido A ganó en 11 casillas, el partido B en 5, el partido C, en 1 y en otra hubo un empate ganador entre el B y el C.
+
+```{r}
+mapa_acolman<-subset(mapa, (mapa$municipio==2))
+table(mapa_acolman$ganador)
+
+```
+
+Se elaboró el mapa y se exportó a imagen
+
+```{r}
+
+#png("acolman.png")
+#ggplot(data = mapa_acolman) +
+ #  aes(geometry = geometry)+
+#  geom_sf(aes(fill=ganador))+
+#  ggtitle("Municipio de Acolman")+
+#  theme(
+#    axis.title = element_blank(), 
+#    axis.text = element_blank(),
+#    axis.ticks = element_blank(),
+#    complete = TRUE
+#  )
+
+#dev.off() 
+
+```
+
+```{r}
+library(magick)
+
+acolman <- image_read("~/Prueba/acolman.png")
+acolman
+
+```
+
+
+Finalmente, se calculó el porcentaje de participación electoral
+
+```{r}
+ Participacion= colSums (base_electoral[ , 5:6])
+  Participacion
+  
+  participa=(58163/90881)*100
+  participa<-round(participa,2)
+  no_participa=(100-participa)
+  
+  labels=c("Participa", "No participa")
+  pparticipacio=c (participa, no_participa)
+  
+
+  
+  Participacion <- data.frame(
+    labels,
+    pparticipacio
+  )
+  
+  library(scales)
+  
+  
+  ggplot(Participacion,aes(x=2,y=pparticipacio, fill=labels))+
+    geom_bar(stat = "identity",
+             color="white")+
+    geom_text(aes(label=percent(pparticipacio/100)),
+              position=position_stack(vjust=0.5),color="white",size=6)+
+    coord_polar(theta = "y")+
+    scale_fill_manual(values=c("salmon","steelblue"), name="")+
+    theme_void()+
+    e_theme+
+    labs(title="Participación Electoral")+
+    xlim(0.5,2.5)
+  
+
+```

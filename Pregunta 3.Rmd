@@ -1,0 +1,43 @@
+---
+title: "Pregunta 3"
+author: "Eunice Sánchez"
+date: "10/13/2022"
+output: html_document
+---
+
+Se carga la base de datos que servirá de base
+```{r}
+library(readxl)
+municipios_rezago <- read_excel("municipios_rezago.xlsx")
+
+```
+
+Para determinar si era viable emplear técnicas de reducción de dimensiones, se calculó la correlación entre variables, y se encontró que son independientes
+
+```{r}
+round (cor(municipios_rezago[, 2:6]),2)
+```
+
+
+Por lo anterior, se creó un índice con el que se prioriza a la educación de las niñas y niños entre 6 y 14 años, así como el acceso a la salud. 
+
+Lo anterior, debido a que la constitución indica el deber de anteponer el interés superior de las niñas y niños, por otro lado, también se consideró que el acceso a los servicios de salud es una condición básica para el cumplimiento del resto de los derechos humanos. A cada una de éstas variables se les asignó una ponderación de 30%
+
+A la variable de analfabetismo, se le asignó un ponderador de 20% debido a que se estima que la educación está relacionada con el nivel de ingresos, por lo que invertir en ello, es lo óptimo para la reducción de la pobreza.
+
+A la variable de piso de tierra se le asignó un 15% y 5% al tamaño de la población.
+
+
+
+
+```{r}
+municipios_rezago$rezago= ((0.2*municipios_rezago$`15_analfabeta`) + (0.3*municipios_rezago$`6_14_sinescuela`) + (0.15*municipios_rezago$viv_pisotierra)+
+  (0.3*municipios_rezago$poblacion_sinsalud)) + (0.05 * ((municipios_rezago$pob_total/ max(municipios_rezago$pob_total))))
+
+municipios_rezago<- municipios_rezago[order(municipios_rezago$rezago,decreasing=TRUE), ]
+municipios_rezago$prioriodad<-seq(1:50)
+
+head (municipios_rezago)
+
+```
+
